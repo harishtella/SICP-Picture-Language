@@ -27,11 +27,30 @@
     (scale-vec point-x x-vec)
     (scale-vec point-y y-vec)))
 
+(defn vertex-v 
+  [[x y] u v]
+  (vertex x y u v))
+
 (defn paint 
   [lines]
   (doseq [line_ lines]
     (let [[[x1 y1] [x2 y2]] line_]
       (line x1 y1 x2 y2))))
+
+(defn paint-pic
+  [vertex-list img]
+  (doall
+    (map 
+      (fn [[v1 v2 v3 v4]]
+        (begin-shape :quads)
+        (texture img)
+        (vertex-v v1 0 0)
+        (vertex-v v2 380 0)
+        (vertex-v v3 380 380)
+        (vertex-v v4 0 380)
+        (end-shape))
+      (partition 4 vertex-list))))
+
 
 (defn add-canvas-border 
   [lines 
@@ -40,7 +59,20 @@
         p2 (add-vec origin-vec x-vec)
         p3 (add-vec origin-vec x-vec y-vec)
         p4 (add-vec origin-vec y-vec)]
-    (conj lines (list p1 p2) (list p2 p3) (list p3 p4) (list p4 p1))))
+    (conj lines 
+          (list p4 p1)
+          (list p3 p4) 
+          (list p2 p3) 
+          (list p1 p2)))) 
+
+(defn add-canvas-verts
+  [{:keys [origin-vec x-vec y-vec]}]
+  (let [p1 origin-vec
+        p2 (add-vec origin-vec x-vec)
+        p3 (add-vec origin-vec x-vec y-vec)
+        p4 (add-vec origin-vec y-vec)]
+    (list p1 p2 p3 p4)))
+
 
 (defn new-painter 
   [lines]
@@ -51,7 +83,19 @@
           c-lines-border (add-canvas-border c-lines canvas)]
       c-lines-border)))
 
-  
+
+(defn new-pic-painter 
+  ([lines]
+   (fn [canvas]
+     (let [c-lines (doall (map 
+                            #(doall (map (partial map-to-canvas canvas) % ))
+                            lines))]
+       c-lines)))
+  ([]
+   (fn [canvas]
+     (add-canvas-verts canvas))))
+
+
 (defn x-split 
   [painter_left painter_right split_point]
   (let [left-canvas (new-canvas '(0 0) (list split_point 0) '(0 1))
@@ -76,11 +120,12 @@
   [x] (take x (repeatedly rand-line)))
 
 
-(def my-canvas (new-canvas '(0 0) '(500 50) '(50 500)))
+(def my-canvas (new-canvas '(0 0) '(500 0) '(0 500)))
 (def my-painter (new-painter (rand-lines 10)))
 (def my-painter2 (right-push my-painter 15 0.2))
 
-(def my-painter3 (new-painter-pic harish-pic))
+(def my-painter3 (new-pic-painter))
+(def my-painter4 (right-push my-painter3 15 0.2))
                   
 
 (defn setup [dst]
@@ -93,18 +138,7 @@
   (background-float 150 150 150)
   (fill-float 100 100 100)
   (stroke-float 10)
-  (begin-shape :quads)
-  (texture harish-pic)
-  (vertex 300 100 0 0)
-  (vertex 400 0 380 0)
-  (vertex 400 400 380 380)
-  (vertex 0 400 0 380)
-  (end-shape))
-
-  
-
-  ;(paint_pic (my-painter3 my-canvas)))
-  ;(paint (my-painter2 my-canvas)))
+  (paint-pic (my-painter4 my-canvas) harish-pic))
 
 
 
@@ -149,7 +183,7 @@
 
 (start)
 
-(stop)
+
   
 
 
