@@ -87,10 +87,9 @@
 (defn new-pic-painter 
   ([lines]
    (fn [canvas]
-     (let [c-lines (doall (map 
-                            #(doall (map (partial map-to-canvas canvas) % ))
-                            lines))]
-       c-lines)))
+     (doall (map 
+              (fn [x] (map-to-canvas canvas x))
+              lines))))
   ([]
    (fn [canvas]
      (add-canvas-verts canvas))))
@@ -100,7 +99,7 @@
   [painter_left painter_right split_point]
   (let [left-canvas (new-canvas '(0 0) (list split_point 0) '(0 1))
         right-canvas (new-canvas (list split_point 0) (list (- 1 split_point) 0) '(0 1))]
-    (new-painter (concat (painter_left left-canvas) (painter_right right-canvas)))))
+    (new-pic-painter (concat (painter_left left-canvas) (painter_right right-canvas)))))
 
 (defn right-push
   [painter iterations split-point]
@@ -120,12 +119,15 @@
   [x] (take x (repeatedly rand-line)))
 
 
-(def my-canvas (new-canvas '(0 0) '(500 0) '(0 500)))
+(def my-canvas (new-canvas '(0 0) '(500 100) '(100 500)))
+(def my-canvas2 (new-canvas '(0 0) '(500 0) '(500 100)))
+(def my-canvas3 (new-canvas '(0 0) '(100 500) '(0 500)))
+
 (def my-painter (new-painter (rand-lines 10)))
 (def my-painter2 (right-push my-painter 15 0.2))
 
 (def my-painter3 (new-pic-painter))
-(def my-painter4 (right-push my-painter3 15 0.2))
+(def my-painter4 (right-push my-painter3 8 0.5))
                   
 
 (defn setup [dst]
@@ -138,7 +140,9 @@
   (background-float 150 150 150)
   (fill-float 100 100 100)
   (stroke-float 10)
-  (paint-pic (my-painter4 my-canvas) harish-pic))
+  (paint-pic (my-painter4 my-canvas) harish-pic)
+  (paint-pic (my-painter4 my-canvas2) harish-pic)
+  (paint-pic (my-painter4 my-canvas3) harish-pic))
 
 
 
@@ -183,6 +187,7 @@
 
 (start)
 
+(stop)
 
   
 
