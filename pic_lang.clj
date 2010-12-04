@@ -33,10 +33,9 @@
 
 (defn paint 
   [lines]
-  (doseq [line_ lines]
-    (let [[[x1 y1] [x2 y2]] line_]
-      (line x1 y1 x2 y2))))
-
+  (doseq [[[x1 y1] [x2 y2]] (partition 2 lines)]
+    (line x1 y1 x2 y2)))
+  
 (defn paint-pic
   [vertex-list img]
   (doall
@@ -73,18 +72,7 @@
         p4 (add-vec origin-vec y-vec)]
     (list p1 p2 p3 p4)))
 
-
 (defn new-painter 
-  [lines]
-  (fn [canvas]
-    (let [c-lines (doall (map 
-                           #(doall (map (partial map-to-canvas canvas) % ))
-                           lines))
-          c-lines-border (add-canvas-border c-lines canvas)]
-      c-lines-border)))
-
-
-(defn new-pic-painter 
   ([lines]
    (fn [canvas]
      (doall (map 
@@ -94,12 +82,11 @@
    (fn [canvas]
      (add-canvas-verts canvas))))
 
-
 (defn x-split 
   [painter_left painter_right split_point]
   (let [left-canvas (new-canvas '(0 0) (list split_point 0) '(0 1))
         right-canvas (new-canvas (list split_point 0) (list (- 1 split_point) 0) '(0 1))]
-    (new-pic-painter (concat (painter_left left-canvas) (painter_right right-canvas)))))
+    (new-painter (concat (painter_left left-canvas) (painter_right right-canvas)))))
 
 (defn right-push
   [painter iterations split-point]
@@ -116,18 +103,25 @@
 (defn rand-line
   [] (take 2 (repeatedly rand-point)))
 (defn rand-lines 
-  [x] (take x (repeatedly rand-line)))
+  [x] 
+  (loop [iter x lines ()]
+    (if (> iter 0)
+      (recur (- iter 1) (concat lines (rand-line)))
+      lines)))
+    
 
 
-(def my-canvas (new-canvas '(0 0) '(500 100) '(100 500)))
+(def my-canvas0 (new-canvas '(0 0) '(500 0) '(0 500)))
+
+(def my-canvas1 (new-canvas '(0 0) '(500 100) '(100 500)))
 (def my-canvas2 (new-canvas '(0 0) '(500 0) '(500 100)))
 (def my-canvas3 (new-canvas '(0 0) '(100 500) '(0 500)))
 
 (def my-painter (new-painter (rand-lines 10)))
-(def my-painter2 (right-push my-painter 15 0.2))
+(def my-painter2 (right-push my-painter 5 0.5))
 
-(def my-painter3 (new-pic-painter))
-(def my-painter4 (right-push my-painter3 8 0.5))
+(def my-painter3 (new-painter))
+(def my-painter4 (right-push my-painter3 5 0.5))
                   
 
 (defn setup [dst]
@@ -140,12 +134,9 @@
   (background-float 150 150 150)
   (fill-float 100 100 100)
   (stroke-float 10)
-  (paint-pic (my-painter4 my-canvas) harish-pic)
-  (paint-pic (my-painter4 my-canvas2) harish-pic)
-  (paint-pic (my-painter4 my-canvas3) harish-pic))
-
-
-
+  (paint-pic (my-painter4 my-canvas0) )
+  (paint (my-painter2 my-canvas0)))
+  
 (defn stop-p-app [dst]
   )
   ; do I need to call superclass stop method? 
@@ -183,12 +174,14 @@
                      (doto swing-frame
                        (.hide)
                        (.dispose)))]
-    (javax.swing.SwingUtilities/invokeAndWait closing-fn)))
+    (javax.swing.SwingUtilities/invokeLater closing-fn)))
+; before was invokeAndWait 
+
 
 (start)
 
 (stop)
+; stop causes app to hang due to .dispose call
 
-  
 
 
