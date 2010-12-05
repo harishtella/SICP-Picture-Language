@@ -134,7 +134,7 @@
   (background-float 150 150 150)
   (fill-float 100 100 100)
   (stroke-float 10)
-  (paint-pic (my-painter4 my-canvas0) )
+  (paint-pic (my-painter4 my-canvas0) harish-pic)
   (paint (my-painter2 my-canvas0)))
   
 (defn stop-p-app [dst]
@@ -174,14 +174,12 @@
                      (doto swing-frame
                        (.hide)
                        (.dispose)))]
-    (javax.swing.SwingUtilities/invokeLater closing-fn)))
-; before was invokeAndWait 
-
+    (javax.swing.SwingUtilities/invokeAndWait closing-fn)))
+; stop when called after the gui thread crashes 
+; causes repl to hang due to .dispose call
+; so I just call (start) again to reboot the app
 
 (start)
-
-(stop)
-; stop causes app to hang due to .dispose call
 
 
 
