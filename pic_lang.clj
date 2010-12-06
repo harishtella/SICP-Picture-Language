@@ -50,20 +50,6 @@
         (end-shape))
       (partition 4 vertex-list))))
 
-
-(defn add-canvas-border 
-  [lines 
-   {:keys [origin-vec x-vec y-vec]}]
-  (let [p1 origin-vec
-        p2 (add-vec origin-vec x-vec)
-        p3 (add-vec origin-vec x-vec y-vec)
-        p4 (add-vec origin-vec y-vec)]
-    (conj lines 
-          (list p4 p1)
-          (list p3 p4) 
-          (list p2 p3) 
-          (list p1 p2)))) 
-
 (defn add-canvas-verts
   [{:keys [origin-vec x-vec y-vec]}]
   (let [p1 origin-vec
@@ -82,11 +68,40 @@
    (fn [canvas]
      (add-canvas-verts canvas))))
 
+
+(defn besides 
+  [lp rp lc rc]
+  (new-painter (concat (lp lc) (rp rc))))
+
+(def on-top besides)
+
+(defn y-split 
+  [painter-top painter-bot split-point]
+  (let [top-canvas (new-canvas '(0 0) 
+                               '(1 0) 
+                               (list 0 split-point))
+        bot-canvas (new-canvas (list 0 split-point) 
+                               '(1 0) 
+                               (list 0 (- 1 split-point)))]
+    (on-top painter-top painter-bot top-canvas bot-canvas)))
+
 (defn x-split 
   [painter_left painter_right split_point]
-  (let [left-canvas (new-canvas '(0 0) (list split_point 0) '(0 1))
-        right-canvas (new-canvas (list split_point 0) (list (- 1 split_point) 0) '(0 1))]
-    (new-painter (concat (painter_left left-canvas) (painter_right right-canvas)))))
+  (let [left-canvas (new-canvas '(0 0) 
+                                (list split_point 0) 
+                                '(0 1))
+        right-canvas (new-canvas (list split_point 0) 
+                                 (list (- 1 split_point) 0) 
+                                 '(0 1))]
+    (besides painter_left painter_right left-canvas right-canvas)))
+
+(defn split-3
+  [split-fn p1 p2 p3 sp1 sp2]
+  (assert (> sp2 sp1))
+  (let [sp2-adj (/ (- sp2 sp1) (- 1 sp1))]
+    (split-fn p1 
+             (split-fn p2 p3 sp2-adj)
+             sp1)))
 
 (defn right-push
   [painter iterations split-point]
@@ -122,6 +137,12 @@
 
 (def my-painter3 (new-painter))
 (def my-painter4 (right-push my-painter3 5 0.5))
+(def my-painter5 (y-split my-painter3 my-painter3 0.75))
+
+
+(def harish-y-side (split-3 y-split my-painter3 my-painter3 my-painter3 0.2 0.8))
+(def harish-y-split-center (split-3 y-split my-painter3 my-painter3 my-painter3 0.2 0.8))
+(def p6 (split-3 x-split harish-y-side harish-y-side harish-y-side 0.2 0.8))
                   
 
 (defn setup [dst]
@@ -134,8 +155,8 @@
   (background-float 150 150 150)
   (fill-float 100 100 100)
   (stroke-float 10)
-  (paint-pic (my-painter4 my-canvas0) harish-pic)
-  (paint (my-painter2 my-canvas0)))
+  (paint-pic (p6 my-canvas0) harish-pic))
+  ;(paint (my-painter2 my-canvas0)))
   
 (defn stop-p-app [dst]
   )
@@ -180,6 +201,4 @@
 ; so I just call (start) again to reboot the app
 
 (start)
-
-
 
