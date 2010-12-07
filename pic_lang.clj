@@ -37,16 +37,16 @@
     (line x1 y1 x2 y2)))
   
 (defn paint-pic
-  [vertex-list img]
+  [vertex-list img img-x img-y]
   (doall
     (map 
       (fn [[v1 v2 v3 v4]]
         (begin-shape :quads)
         (texture img)
         (vertex-v v1 0 0)
-        (vertex-v v2 380 0)
-        (vertex-v v3 380 380)
-        (vertex-v v4 0 380)
+        (vertex-v v2 img-x 0)
+        (vertex-v v3 img-x img-y)
+        (vertex-v v4 0 img-y)
         (end-shape))
       (partition 4 vertex-list))))
 
@@ -103,6 +103,27 @@
              (split-fn p2 p3 sp2-adj)
              sp1)))
 
+(defn split-squared
+  [p1 p2 p3 p4]
+  (y-split 
+    (x-split p1 p2 0.5)
+    (x-split p3 p4 0.5)
+    0.5))
+  
+(defn split-squared-r
+  [p depth corners]
+  (if (> depth 0)
+    (let [r-fn (partial split-squared-r p (dec depth) corners)
+          args (map 
+                 #(if (corners %) (r-fn) p) 
+                 '(:tl :tr :bl :br))]
+      (apply split-squared args)) 
+    p))
+
+
+
+
+
 (defn right-push
   [painter iterations split-point]
   (if (= iterations 0) 
@@ -126,37 +147,43 @@
     
 
 
-(def my-canvas0 (new-canvas '(0 0) '(500 0) '(0 500)))
+(def simple-canvas (new-canvas '(0 0) '(500 0) '(0 500)))
 
-(def my-canvas1 (new-canvas '(0 0) '(500 100) '(100 500)))
-(def my-canvas2 (new-canvas '(0 0) '(500 0) '(500 100)))
-(def my-canvas3 (new-canvas '(0 0) '(100 500) '(0 500)))
+(def simple_p (new-painter (rand-lines 10)))
+(def simple-p-rp (right-push simple_p 5 0.5))
 
-(def my-painter (new-painter (rand-lines 10)))
-(def my-painter2 (right-push my-painter 5 0.5))
+(def harish-p (new-painter))
+(def harish-p-rp (right-push harish-p 5 0.5))
 
-(def my-painter3 (new-painter))
-(def my-painter4 (right-push my-painter3 5 0.5))
-(def my-painter5 (y-split my-painter3 my-painter3 0.75))
-
-
-(def harish-y-side (split-3 y-split my-painter3 my-painter3 my-painter3 0.2 0.8))
-(def harish-y-split-center (split-3 y-split my-painter3 my-painter3 my-painter3 0.2 0.8))
+;experimenting with a different recursive image
+(def harish-y-side (split-3 y-split harish-p harish-p harish-p 0.2 0.8))
+(def harish-y-split-center (split-3 y-split harish-p harish-p harish-p 0.2 0.8))
 (def p6 (split-3 x-split harish-y-side harish-y-side harish-y-side 0.2 0.8))
-                  
+
+(def harish-squared 
+  (let [p harish-p
+        n 7]
+    (split-squared 
+      (split-squared-r p n #{:tl :tr :bl})
+      (split-squared-r p n #{:tl :tr :br})
+      (split-squared-r p n #{:tl :bl :br})
+      (split-squared-r p n #{:tr :bl :br}))))
+
 
 (defn setup [dst]
   (size 500 500 OPENGL )
   (smooth)
   (framerate 10)
-  (def harish-pic (load-image "harish.jpg")))
+  (no-loop)
+  (def harish-pic (load-image "harish.tga"))
+  (def harish-pic-2 (load-image "harish_2.tga")))
 
 (defn draw [dst]
   (background-float 150 150 150)
   (fill-float 100 100 100)
   (stroke-float 10)
-  (paint-pic (p6 my-canvas0) harish-pic))
-  ;(paint (my-painter2 my-canvas0)))
+  (paint-pic (harish-squared simple-canvas) harish-pic-2 384 384)
+  (save "harish_out_2.tif" ))
   
 (defn stop-p-app [dst]
   )
@@ -198,7 +225,3 @@
     (javax.swing.SwingUtilities/invokeAndWait closing-fn)))
 ; stop when called after the gui thread crashes 
 ; causes repl to hang due to .dispose call
-; so I just call (start) again to reboot the app
-
-(start)
-
