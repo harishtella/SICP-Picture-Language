@@ -1,3 +1,17 @@
+
+; XXX
+; Difference from MIT code:
+; their combinators create new painter function composed of the given a painter func
+; this delays execution of any painter func til the end when a canvas is passed
+; in to the final painter func.
+; 
+; my combinators execute the given painter funcs then create a new painter func
+; based on data returned from the given painter func execution
+;
+; this wouldn't work if my painters actually painted when called, like the MIT
+; code. I mimic this delayed painting by creating a paint function which is
+; really cheating my way back to a non lisp thinking.
+
 (ns pic-lang
   (:use rosado.processing)
   (:import (javax.swing JFrame))
@@ -180,10 +194,9 @@
 
 (defn draw [dst]
   (background-float 150 150 150)
-  (fill-float 100 100 100)
-  (stroke-float 10)
+  (fill-float 255 255 255)
   (paint-pic (harish-squared simple-canvas) harish-pic-2 384 384)
-  (save "harish_out_2.tif" ))
+  (save "harish_out_2_framed.tif" ))
   
 (defn stop-p-app [dst]
   )
